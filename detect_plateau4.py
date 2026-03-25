@@ -11,11 +11,16 @@ num = 0
 try:
     while True:
         frame = picam2.capture_array()
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        blur = cv2.medianBlur(gray, 15)
+        _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.imshow("Camera", frame)
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('s'):
+
+        if cv2.waitKey(1) == ord('s'):
             filename = f"Capture/capture_{num}.jpg"
             cv2.imwrite(filename, frame)
+            num+=1
         
 
 except Exception as e:
