@@ -15,14 +15,21 @@ try:
         blur = cv2.medianBlur(gray, 15)
         _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            un_pour_cent = 1333.33
+
         cv2.imshow("Camera", frame)
 
-        if cv2.waitKey(1) == ord('s'):
+        if cv2.waitKey(1) & 0xFF == ord('s'):
             filename = f"Capture/capture_{num}.jpg"
             cv2.imwrite(filename, frame)
             num+=1
         
-
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        
 except Exception as e:
     print(f"Erreur : {e}")
     
