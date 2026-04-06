@@ -32,6 +32,8 @@ try:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
                         cv2.putText(frame, f"PLATEAU ({int(solidity*100)}%)", (x, y-10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        
+        cv2.imshow("Camera", frame)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
