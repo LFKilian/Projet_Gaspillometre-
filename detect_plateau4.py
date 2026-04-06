@@ -8,6 +8,8 @@ picam2.configure(config)
 picam2.start()
 num = 0
 
+print("Appuyez sur 'q' pour quitter.")
+
 try:
     while True:
         frame = picam2.capture_array()
@@ -19,13 +21,17 @@ try:
         for cnt in contours:
             area = cv2.contourArea(cnt)
             un_pour_cent = 1333.33
-
-        cv2.imshow("Camera", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('s'):
-            filename = f"Capture/capture_{num}.jpg"
-            cv2.imwrite(filename, frame)
-            num+=1
+            if area > un_pour_cent * 35:
+                hull = cv2.convexHull(cnt)
+                hull_area = cv2.contourArea(hull)
+                solidity = float(area)/hull_area if hull_area > 0 else 0
+                if solidity > 0.9:
+                    x, y, w, h = cv2.boundingRect(cnt)
+                    aspect_ratio = float(w)/h
+                    if 1.1 < aspect_ratio < 2.2:
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
+                        cv2.putText(frame, f"PLATEAU ({int(solidity*100)}%)", (x, y-10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
