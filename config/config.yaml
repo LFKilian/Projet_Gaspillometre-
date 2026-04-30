@@ -1,0 +1,86 @@
+# ============================================================
+# GASPILLOMÈTRE - Configuration générale
+# ============================================================
+
+# --- Modèle ---
+model:
+  name: yolov8n  # nano = rapide, idéal pour prototype (yolov8n, yolov8s, yolov8m, yolov8l, yolov8x)
+  confidence_threshold: 0.25
+  iou_threshold: 0.45
+  imgsz: 640
+
+# --- Entraînement ---
+training:
+  epochs: 200
+  batch_size: 8       # Ajuster selon votre GPU (8 pour ~4GB VRAM)
+  patience: 80        # Laisse le temps de progresser, sans bloquer trop longtemps si ça stagne
+  lr0: 0.003          # Plus stable pour fine-tuning sur petit dataset
+  lrf: 0.01
+  optimizer: AdamW
+  weight_decay: 0.0005
+  cos_lr: true
+  close_mosaic: 20
+  label_smoothing: 0.05
+  augment: true
+  pretrained: true     # Transfer learning depuis COCO
+
+# --- Augmentations YOLO ---
+# Réglages modérés pour éviter de trop déformer les aliments
+augmentations:
+  hsv_h: 0.01
+  hsv_s: 0.4
+  hsv_v: 0.2
+  degrees: 5.0
+  translate: 0.08
+  scale: 0.3
+  shear: 1.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 0.5
+  mixup: 0.0
+
+# --- Estimation de poids ---
+# Densité moyenne (g/cm²) pour chaque catégorie d'aliment
+# Ces valeurs sont des estimations initiales à calibrer
+weight_estimation:
+  reference_tray_area_cm2: 1200  # Surface d'un plateau standard en cm²
+  density_g_per_cm2:
+    Yaourt: 0.50
+    apple: 0.75
+    banane: 0.50
+    beignet: 0.40
+    charcuterie: 0.70
+    flajollet: 0.65
+    fromage: 0.80
+    gaspillage: 0.60
+    gateau: 0.40
+    haricot: 0.60
+    legume: 0.45
+    pain: 0.35
+    patate: 0.85
+    pate: 0.60
+    petit_pois: 0.35
+    pizza: 0.65
+    poisson: 0.75
+    poisson_entre: 0.70
+    puree: 0.90
+    ratatouille: 0.50
+    riz: 0.70
+    salade: 0.20
+    saucisse: 0.85
+    viande: 0.85
+
+# --- Statistiques ---
+stats:
+  saisons:
+    hiver: [12, 1, 2]
+    printemps: [3, 4, 5]
+    ete: [6, 7, 8]
+    automne: [9, 10, 11]
+
+# --- Chemins ---
+paths:
+  data_dir: data
+  models_dir: models
+  results_dir: results
+  logs_dir: logs

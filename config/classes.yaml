@@ -1,0 +1,40 @@
+# ============================================================
+# GASPILLOMÈTRE - Configuration des classes d'aliments
+# ============================================================
+# Fichier de configuration du dataset YOLO
+# Ajoutez vos classes ici au fur et à mesure des annotations
+
+path: data
+train: images/train
+val: images/val
+
+# Classes d'aliments détectables sur les plateaux
+# Adaptez cette liste à votre cantine / restaurant
+names:
+  0: Yaourt
+  1: apple
+  2: banane
+  3: beignet
+  4: charcuterie
+  5: flageolet
+  6: fromage
+  7: gaspillage
+  8: gateau
+  9: haricot
+  10: legume
+  11: pain
+  12: patate
+  13: pate
+  14: petit_pois
+  15: pizza
+  16: poisson
+  17: poisson_entre
+  18: puree
+  19: ratatouille
+  20: riz
+  21: salade
+  22: saucisse
+  23: viande
+
+# Nombre de classes
+nc: 24
