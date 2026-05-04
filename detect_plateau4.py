@@ -32,8 +32,18 @@ try:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
                         cv2.putText(frame, f"PLATEAU ({int(solidity*100)}%)", (x, y-10),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        BOOL = True
+            else:
+                BOOL = False
                         
         cv2.imshow("Camera", frame)
+
+        if BOOL:
+            filename = f"Capture/capture_{num}.jpg"
+            cv2.imwrite(filename, frame)
+            print(f"Photo prise : {filename}")
+            num += 1
+            
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
