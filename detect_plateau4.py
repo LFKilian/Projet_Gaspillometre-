@@ -7,6 +7,8 @@ config = picam2.create_video_configuration(main={"size": (640, 480), "format": "
 picam2.configure(config)
 picam2.start()
 num = 0
+BOOL=False
+plateau_deja_vu = True
 
 print("Appuyez sur 'q' pour quitter.")
 
@@ -39,10 +41,18 @@ try:
         cv2.imshow("Camera", frame)
 
         if BOOL:
-            filename = f"Capture/capture_{num}.jpg"
-            cv2.imwrite(filename, frame)
-            print(f"Photo prise : {filename}")
-            num += 1
+            if plateau_deja_vu == False:
+                filename = f"Capture/capture_{num}.jpg"
+                cv2.imwrite(filename, frame)
+
+                print(f"Photo prise : {filename}")
+                num += 1
+                plateau_deja_vu = True
+        else:
+            if plateau_deja_vu == True:
+                print("Prêt pour le suivant")
+                plateau_deja_vu = False
+                print(plateau_deja_vu)
             
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
