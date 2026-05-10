@@ -199,7 +199,40 @@ class WasteDetector:
             (241, 148, 138), (174, 214, 241), (215, 189, 226),
         ]
         return colors[class_id % len(colors)]
+
+
+def log_detection(result: dict, image_name: str, log_file: Path, resultats_file: Path):
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    resultats_file.parent.mkdir(parents=True, exist_ok=True)
+       
+    def to_jsonable(value):
+        if isinstance(value, np.floating):
+            return float(value)
+        if isinstance(value, np.integer):
+            return int(value)
+        if isinstance(value, list):
+            return [to_jsonable(v) for v in value]
+        if isinstance(value, dict):
+            return {k: to_jsonable(v) for k, v in value.items()}
+        return value
+            
+    for detection in result["detections"]:
+        payload = {
+            "class_id": to_jsonable(detection["class_id"]),
+            "weight_g": to_jsonable(detection["weight_g"]),
+            "aliment": to_jsonable(detection["class_name"]),
+        }
+        
+        '''
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")'''
+            
+        with open(resultats_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
                     
+
+
+
 def process_image(detector: WasteDetector, image_path: Path, output_dir: Path, log_file: Path, resultats_file):
     """Traite une seule image."""
     print(f"\n  📸 {image_path.name}")
@@ -220,7 +253,11 @@ def process_image(detector: WasteDetector, image_path: Path, output_dir: Path, l
     cv2.imwrite(str(output_path), result["annotated_image"])
     print(f"    💾 Sauvegardé : {output_path.relative_to(PROJECT_ROOT)}")
 
+    # Logger
+    log_detection(result, image_path.name, log_file, resultats_file)
+
     return result
+
 
 def run_camera(detector: WasteDetector, camera_id: int = 0):
     """Mode caméra temps réel."""
