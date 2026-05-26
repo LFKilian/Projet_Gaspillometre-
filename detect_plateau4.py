@@ -25,12 +25,16 @@ try:
     while True:
         frame = picam2.capture_array()
         
+        # Passer en Gris et augmenter le contraste
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         
+        # Nettoyer et simplifier
         blur = cv2.medianBlur(gray, 15)
         
+        # transformer en noir et blanc
         _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
+        # detecter les formes geometriques
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours:
@@ -38,16 +42,21 @@ try:
             
             un_pour_cent = 1333.33
             
+            # Occuper au moins 35% de l'image
             if area > un_pour_cent * 35:
+                # Calcul de la solidité : Aire du contour / Aire de l'enveloppe convexe
                 hull = cv2.convexHull(cnt)
                 hull_area = cv2.contourArea(hull)
                 solidity = float(area)/hull_area if hull_area > 0 else 0
                 
+                # Un rectangle (même arrondi) est très "solide" (> 0.9)
                 if solidity > 0.9:
+                    # On dessine un rectangle englobant (Bounding Box)
                     x, y, w, h = cv2.boundingRect(cnt)
                     aspect_ratio = float(w)/h
                     BOOL=True
                     
+                    # vérifier que c'est bien une forme allongée (le plateau)
                     if 1.1 < aspect_ratio < 2.2:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
                         cv2.putText(frame, f"PLATEAU ({int(solidity*100)}%)", (x, y-10), 
@@ -59,6 +68,7 @@ try:
         
         if BOOL:
             if plateau_deja_vu == False:
+                # Choix image test ou temps-réel
                 if args.test:
                     print(args.test)
                     filename = args.test
@@ -68,13 +78,14 @@ try:
                     cv2.imwrite(filename, frame)
                     delete = True
                 
+                # Exécution modèle de reconnaissance des déchet
                 print(f"Photo prise : {filename}")
-                
                 print("Lancement reconnaissance...")
                 ajouter_log("Lancement reconnaissance...")
                 cmd = ["python3", "inference.py", "--image", filename, "--conf", "0.75"]
                 subprocess.run(cmd)
                 
+                # Envoi réseau des données en fond vers l'api
                 print("Envoi données à l'API...")
                 ajouter_log("Envoi données à l'API...")
                 thread_api = threading.Thread(
@@ -86,9 +97,11 @@ try:
                 num += 1
                 plateau_deja_vu = True
                 
+                # Suppression de la photo locale
                 if delete == True :
                     os.remove(filename)
                 
+                # Envoi réseau des logs en fond vers l'api
                 """
                 print("Envoi log à l'API...")
                 ajouter_log("Envoi log à l'API...")
@@ -111,6 +124,8 @@ except Exception as e:
     print(f"Erreur : {e}")
     
 
-finally:        
+finally:  
+    # Fermeture caméra      
     picam2.stop()
     cv2.destroyAllWindows()
+
