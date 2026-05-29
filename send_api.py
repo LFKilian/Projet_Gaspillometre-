@@ -3,18 +3,56 @@ from datetime import datetime
 import os
 import json
 from pathlib import Path
+import sys
+import logging
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 date_actuelle = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-token = "J1Yz5Ic6Ht+koGlVOukLeQ$gF75BH8vAEX3NrEvy/OV5KzvcJSIYcAYUh/vSbQ5Gkk"
+pass_token = "b8c95e1a-18a6-11f1-a5d2-423b83e4d33c"
 rasp_id="rasp1"
 RESULTS_DIR = PROJECT_ROOT / "Final" / "results"
 LOGS_DIR = PROJECT_ROOT / "Final" / "logs"
 path_json = RESULTS_DIR / "resultats.jsonl"
-path_log = LOGS_DIR / "logs.jsonl"
+path_log = LOGS_DIR / "logs.log"
+path_log_save = LOGS_DIR / "save_log.log"
+
+
+format_log = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+# Le fichier temporaire
+handler_tmp = logging.FileHandler(path_log, mode='w', encoding='utf-8')
+handler_tmp.setFormatter(format_log)
+# Le fichier de sauvegarde historique
+handler_save = logging.FileHandler(path_log_save, mode='a', encoding='utf-8')
+handler_save.setFormatter(format_log)
+# On applique la configuration au système de log de Python
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(handler_tmp)
+logger.addHandler(handler_save)
+
+def getToken():
+    url = "http://10.0.200.78:8000/token"
+    
+    parametres = {
+        "username": str(rasp_id),
+        "password": pass_token
+        }
+        
+    response = requests.post(url, data=parametres, timeout=5)
+    
+    if response.status_code in [200, 201]:
+        donnees = response.json()
+        token_extrait = donnees.get("access_token")
+        return token_extrait
+    else:
+        print(f"API : Erreur {response.status_code} : {response.text}")
+
+token = getToken()            
+print(token)
 
 def envoyer_analyse_api():
 
+    retries = 0
     url = "http://10.0.200.78:8000/insertAnalyse"
 
     # Vérification que le fichier JSON existe bien
@@ -51,6 +89,11 @@ def envoyer_analyse_api():
                     response = requests.post(url, params=parametres, timeout=5)
                     if response.status_code in [200, 201]:
                         succes = True
+                    if response.status_code in [401]:
+                        print(f"Erreur {response.status_code}")
+                        token = getToken()
+                        succes = False
+                        envoyer_analyse_api()
                     else:
                         print(f"API : Erreur {response.status_code} : {response.text}")
                         ajouter_log(f"API : Erreur {response.status_code} : {response.text}")
@@ -67,19 +110,13 @@ def envoyer_analyse_api():
 
 
 def ajouter_log(message):
-   
-    nouvelle_ligne = {
-        "timestamp": date_actuelle,
-        "message": str(message)
-    }
-    
-    with open(path_log, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(nouvelle_ligne, ensure_ascii=False) + '\n') 
+   logging.info(message)
 
-"""
+
 def envoyer_log_api():
-
-    url = "http://10.0.200.78:8000/SendLog"
+    
+    global token
+    url = "http://10.0.200.78:8000/insertLog"
 
     if not os.path.exists(path_log):
         print(f"Erreur : {path_log} introuvable")
@@ -88,34 +125,39 @@ def envoyer_log_api():
     try:
         # Lecture et chargement du fichier JSON
         with open(path_log, 'r', encoding='utf-8') as f:
-            for ligne in f:
-                donnees_json = json.loads(ligne)
+            ligne = f.read().strip()
 
-                actions = donnees_json.get('message')
-                if actions:
-                    actions_log.append(actions)
-
-                for log in actions_logs:
+        if ligne:
+            extrait = ligne.split("|")
+            date_extrait = extrait[0].strip()
+            level_extrait = extrait[1].strip()
+            message_extrait = extrait[2].strip()
                 
-                    # Paramètres FastAPI
-                    parametres = {
-                        "date": str(date_actuelle),
-                        "message": str(log),
-                        "rasp": str(rasp_id),
-                        "token": str(token)
-                    }
+                
+            print(token)
+            # Paramètres FastAPI
+            parametres = {
+                "date": str(date_extrait),
+                "level": str(level_extrait),
+                "message": str(message_extrait),
+                "rasp": str(rasp_id),
+                "token": str(token)
+            }
+            
                     
-                    # Envoi
-                    response = requests.post(url, params=parametres, timeout=5)
-                    if response.status_code in [200, 201]:
-                        print(f"API : Succès !")
-                    else:
-                        print(f"API : Erreur {response.status_code} : {response.text}")
+            # Envoi
+            response = requests.post(url, params=parametres, timeout=5)
+            if response.status_code in [200, 201]:
+                print(f"API : Succès !")
+            if response.status_code in [401]:
+                print(f"Erreur {response.status_code}")
+                token = getToken()
+                succes = False
+                envoyer_analyse_api()
+            else:
+                print(f"API : Erreur {response.status_code} : {response.text}")
                         
-        if succes == True:
-            os.remove(path_json)
-            print(f"API : Succès !")
-            ajouter_log("API : Succès !")                
 
     except Exception as e:
-        print(f"API : Échec de la connexion : {e}") """
+        print(f"API : Échec de la connexion : {e}")
+

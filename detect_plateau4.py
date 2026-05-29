@@ -2,6 +2,7 @@ from picamera2 import Picamera2
 import cv2
 import subprocess
 from send_api import envoyer_analyse_api
+from send_api import envoyer_log_api
 from send_api import ajouter_log
 import threading
 import argparse
@@ -42,8 +43,8 @@ try:
             
             un_pour_cent = 1333.33
             
-            # Occuper au moins 35% de l'image
-            if area > un_pour_cent * 35:
+            # Occuper au moins 25% de l'image
+            if area > un_pour_cent * 25:
                 # Calcul de la solidité : Aire du contour / Aire de l'enveloppe convexe
                 hull = cv2.convexHull(cnt)
                 hull_area = cv2.contourArea(hull)
@@ -54,15 +55,16 @@ try:
                     # On dessine un rectangle englobant (Bounding Box)
                     x, y, w, h = cv2.boundingRect(cnt)
                     aspect_ratio = float(w)/h
-                    BOOL=True
                     
                     # vérifier que c'est bien une forme allongée (le plateau)
                     if 1.1 < aspect_ratio < 2.2:
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
                         cv2.putText(frame, f"PLATEAU ({int(solidity*100)}%)", (x, y-10), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                else:
-                    BOOL=False
+                        BOOL=True
+
+                    else:
+                        BOOL=False
 
         cv2.imshow("Detection par Solidite", frame)
         
@@ -97,12 +99,11 @@ try:
                 num += 1
                 plateau_deja_vu = True
                 
-                # Suppression de la photo locale
                 if delete == True :
+                    # Suppression de la photo locale
                     os.remove(filename)
                 
                 # Envoi réseau des logs en fond vers l'api
-                """
                 print("Envoi log à l'API...")
                 ajouter_log("Envoi log à l'API...")
                 thread_api = threading.Thread(
@@ -110,12 +111,11 @@ try:
                     args=() 
                 )
                 thread_api.start()
-                """
+
         else:
             if plateau_deja_vu == True:
                 print("Prêt pour le suivant")
                 plateau_deja_vu = False
-                print(plateau_deja_vu)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -124,8 +124,7 @@ except Exception as e:
     print(f"Erreur : {e}")
     
 
-finally:  
-    # Fermeture caméra      
+finally:
+    # Fermeture caméra          
     picam2.stop()
     cv2.destroyAllWindows()
-
